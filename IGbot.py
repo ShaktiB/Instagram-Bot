@@ -9,11 +9,19 @@ from selenium.common.exceptions import TimeoutException
 from time import sleep
 
 class IGbot:
+    
     def __init__(self):
+        
         self.driver = webdriver.Chrome(ChromeDriverManager().install()) # Initialize the webdriver
         self.driver.get("https://www.instagram.com/accounts/login/")
+        self.url = self.driver.current_url # Store the current url of the page
+        self.usr = '' # The username 
+        self.main_url = '' # Main account (feed) page url
+        self.profile_url = '' # Profile page url 
         
     def login(self, user, pw): # Log-in to the IG account
+        
+        self.usr = user # Store the uername for later use if needed
         
         try:
             element_user = WebDriverWait(self.driver,3).until(
@@ -22,54 +30,82 @@ class IGbot:
             element_pass = WebDriverWait(self.driver,3).until(
                     EC.presence_of_element_located((By.NAME, "password"))) # Wait until the page loads all 'password' element
             
+        
+            element_user.send_keys(user) # Enter the username
+            element_pass.send_keys(pw) # Enter the password
+            element_pass.submit() # Same as pressing the 'Enter' button on the keyboard
+            
+            #self.driver.find_element_by_id("react-root").click() # Click on the login button
+            
+            # After logging in, a 'Turn on Notifications' pop-up might come up, this handles the pop-up
+            # and automatically clicks on "Not Now")
+            loaded = None
+            count = 0
+            while not loaded:
+                
+                try:
+                    
+                    loaded = WebDriverWait(self.driver,5).until(
+                            EC.presence_of_element_located((By.XPATH, '//button[text()="Not Now"]')))
+                    
+                    if(loaded):
+                        self.driver.find_element_by_xpath('//button[text()="Not Now"]').click()
+                        self.url = self.driver.current_url # Store the current url of the page
+                        
+                except (NoSuchElementException,TimeoutException) as e: 
+                    
+                    print("'Turn on Notifications' pop-up did not come up or waiting to be loaded")
+                    count += 1
+                
+                if(count>3):
+                    break
             
         except NoSuchElementException: 
-            print("The username and password fields are taking too long to load")
-                
-
-        element_user.send_keys(user) # Enter the username
-        element_pass.send_keys(pw) # Enter the password
-        element_pass.submit() # Same as pressing the 'Enter' button on the keyboard
-        
-        #self.driver.find_element_by_id("react-root").click() # Click on the login button
-        
-        # After logging in, a 'Turn on Notifications' pop-up might come up, this handles the pop-up
-        # and automatically clicks on "Not Now")
-        loaded = None
-        count = 0
-        while not loaded:
-            try:
-                loaded = WebDriverWait(self.driver,5).until(
-                        EC.presence_of_element_located((By.XPATH, '//button[text()="Not Now"]')))
-                
-                if(loaded):
-                    self.driver.find_element_by_xpath('//button[text()="Not Now"]').click()
-                
-            except (NoSuchElementException,TimeoutException) as e: 
-                print("'Turn on Notifications' pop-up did not come up or waiting to be loaded")
-                count += 1
             
-            if(count>3):
-                break
+            print("The username and password fields are taking too long to load")
     
     def profile_page(self): # Go to the profile page of the IG account
         
         try:
             btn = WebDriverWait(self.driver,5).until(
                     EC.presence_of_element_located((By.CSS_SELECTOR,"[aria-label=Profile]")))
+            
             if(btn):
+                
                 btn.click()
-        
+    
+                self.url = self.driver.current_url # Store the current url of the page     
+                
+                if(not self.profile_url):
+                    self.profile_url = self.driver.current_url
+                    
         except (NoSuchElementException,TimeoutException) as e: 
+            
             print("Issue with clicking profile button")
             
     def main_page(self): # Go to the main page of the IG account
         
         try:
-            btn = WebDriverWait(self.driver,5).until(
-                    EC.presence_of_element_located((By.CSS_SELECTOR,"[aria-label=Instagram]")))
+           
+            if (self.url == self.profile_url):
+                
+                btn = btn = WebDriverWait(self.driver,5).until(
+                        EC.presence_of_element_located((By.CLASS_NAME,"s4Iyt")))
+                
+            else:
+            
+                btn = WebDriverWait(self.driver,5).until(
+                        EC.presence_of_element_located((By.CSS_SELECTOR,"[aria-label=Instagram]")))
+            
             if(btn):
                 btn.click()
+                
+                self.url = self.driver.current_url # Store the current url of the page     
+                
+                if(not self.main_url):
+                    self.main_url = self.driver.current_url
+                
+            self.get_url() # Get the current url of the page
         
         except (NoSuchElementException,TimeoutException) as e: 
             print("Issue with clicking main page button")
@@ -98,6 +134,11 @@ class IGbot:
         
         except (NoSuchElementException,TimeoutException) as e: 
             print("Issue with getting posts, followers, and following numbers")
+        
+    def get_url(self):
+        
+        self.url = self.driver.current_url
+        
 
     def close_driver(self): # Close the webdriver 
         self.driver.close()
@@ -116,17 +157,23 @@ if __name__ == "__main__":
     bot = IGbot() # Initialize the IG bot & open IG website
     
     bot.login('shaktii_b','messi914') # Log-in to your account
+    
+    print(f'The current url is: {bot.url}')
+    
     bot.profile_page() # Go to the profile page
+    
+    print(f'The current url is: {bot.url}')
     
     summary = bot.profile_summary() # The number of posts, followers, and following of the IG account
     print(f"\nPosts: {summary[0]}\nFollowers: {summary[1]}\nFollowing: {summary[2]} \n") # Prin account summary
     print("Followers Ratio: {:.2f}".format(summary[1]/summary[2])) # Print follower ratio 
     
     bot.main_page()
-    sleep(5)
-    bot.close_driver()
+    print(f'The current url is: {bot.url}')
+    #sleep(5)
+    #bot.close_driver()
     
-    
+
     
     
     
