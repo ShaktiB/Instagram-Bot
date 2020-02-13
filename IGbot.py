@@ -1,5 +1,5 @@
 from selenium import webdriver
-from webdriver_manager.chrome import ChromeDriverManager
+#from webdriver_manager.chrome import ChromeDriverManager
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
@@ -12,7 +12,8 @@ class IGbot:
     
     def __init__(self):
         
-        self.driver = webdriver.Chrome(ChromeDriverManager().install()) # Initialize the webdriver
+        #self.driver = webdriver.Chrome(ChromeDriverManager().install()) # Initialize the webdriver
+        self.driver = webdriver.Chrome(r'C:\Users\Shakti\.wdm\drivers\chromedriver\80.0.3987.16\win32\chromedriver') # Initialize the webdriver >> UPDATE FOR FINAL VERSION
         self.driver.get("https://www.instagram.com/accounts/login/")
         self.url = self.driver.current_url # Store the current url of the page
         self.usr = '' # The username 
@@ -34,8 +35,6 @@ class IGbot:
             element_user.send_keys(user) # Enter the username
             element_pass.send_keys(pw) # Enter the password
             element_pass.submit() # Same as pressing the 'Enter' button on the keyboard
-            
-            #self.driver.find_element_by_id("react-root").click() # Click on the login button
             
             # After logging in, a 'Turn on Notifications' pop-up might come up, this handles the pop-up
             # and automatically clicks on "Not Now")
@@ -89,23 +88,33 @@ class IGbot:
            
             if (self.url == self.profile_url):
                 
-                btn = btn = WebDriverWait(self.driver,5).until(
-                        EC.presence_of_element_located((By.CLASS_NAME,"s4Iyt")))
+#                btn = btn = WebDriverWait(self.driver,5).until(
+#                        EC.presence_of_element_located((By.CLASS_NAME,"s4Iyt")))
+                
+                WebDriverWait(self.driver,10).until(EC.element_to_be_clickable((By.CLASS_NAME,"s4Iyt"))).click()
+               
+                self.url = self.get_url() # Store the current url of the page     
+                
+                if(not self.main_url):
+                    self.main_url = self.driver.current_url
+                
+                self.get_url() # Get the current url of the page
                 
             else:
             
                 btn = WebDriverWait(self.driver,5).until(
                         EC.presence_of_element_located((By.CSS_SELECTOR,"[aria-label=Instagram]")))
             
-            if(btn):
-                btn.click()
-                
-                self.url = self.driver.current_url # Store the current url of the page     
-                
-                if(not self.main_url):
-                    self.main_url = self.driver.current_url
-                
-            self.get_url() # Get the current url of the page
+                if(btn):
+    #                wait.until(EC.element_to_be_clickable(By.CLASS_NAME,"s4Iyt")).click()
+                    btn.click()
+                    
+                    self.url = self.driver.current_url # Store the current url of the page     
+                    
+                    if(not self.main_url):
+                        self.main_url = self.driver.current_url
+                    
+                    self.get_url() # Get the current url of the page
         
         except (NoSuchElementException,TimeoutException) as e: 
             print("Issue with clicking main page button")
@@ -119,23 +128,18 @@ class IGbot:
             
             
             flwrs = self.driver.find_element_by_xpath("//*[@id='react-root']/section/main/div/header/section/ul/li[2]/a/span")
-    #        flwrs = WebDriverWait(self.driver,5).until( # Find the element for the followers on the webpage
-    #                    EC.presence_of_element_located((By.XPATH, "//*[@id='react-root']/section/main/div/header/section/ul/li[2]/a/span")))
             followers = int(flwrs.text)
             
             
             flwng = self.driver.find_element_by_xpath("//*[@id='react-root']/section/main/div/header/section/ul/li[3]/a/span")
-    #        flwng = WebDriverWait(self.driver,5).until( # Find the element for the followers on the webpage
-    #                    EC.presence_of_element_located((By.XPATH, "//*[@id='react-root']/section/main/div/header/section/ul/li[3]/a/span")))
             following = int(flwng.text)
-
 
             return [posts,followers,following]
         
         except (NoSuchElementException,TimeoutException) as e: 
             print("Issue with getting posts, followers, and following numbers")
         
-    def get_url(self):
+    def get_url(self): # Get the url of the current page
         
         self.url = self.driver.current_url
         
